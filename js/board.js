@@ -62,13 +62,32 @@ _.extend(ViewModel.prototype, {
                         var fileChar = String.fromCharCode(96+col);
                         return fileChar + row ;
             }
+
             if (that.boardModel.getSelected() === squareName) {
                 that.boardModel.deselect();
             }
-            else {
+            else if (that.boardModel.hasSelected()) {
+                // MAKE A MOVE
+                var moveFrom = that.boardModel.getSelected();
+                var moveTo   = squareName;
+
+                console.log("attempt move from: " + moveFrom + " to: " + moveTo);
+                that.makeMove(moveFrom, moveTo);
+                that.boardModel.deselect();
+            }
+            else if (that.boardModel.getPieceAt(squareName)) {
                 that.boardModel.selectSquare(squareName);
             }
         })();
+    },
+
+    makeMove: function(moveFrom, moveTo) {
+        $.post("PATH_TO_RESOURCE",
+               {from: moveFrom, to: moveTo, fen: this.boardModel.getFEN()},
+               function(data) {
+
+        }).fail(function() {
+        });
     },
 
     drawBoardSquares: function() {
@@ -166,9 +185,14 @@ _.extend(ChessModel.prototype, {
             col: colIndex,
         };
     },
+
     getPieceAt: function(squareName) {
         var indices = this.squareToIndex(squareName);
         return this.boardArray[indices.row][indices.col];
+    },
+
+    hasSelected: function() {
+        return (this.getSelected() !== "");
     },
 
     getSelected: function() {
@@ -189,6 +213,10 @@ _.extend(ChessModel.prototype, {
         _.each(this.listeners, function(callback, index) {
             callback('SQUARE_DESELECTED');
         });
+    },
+
+    getFEN: function() {
+        return this.stateString;
     },
 
     parseFEN: function() {

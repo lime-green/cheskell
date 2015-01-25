@@ -1,5 +1,34 @@
-#display {
-    margin: auto;
-    width: 600px;
-    height: 600px;
+tbody, thead, tr, td, th {
+    display: block;
+}
+
+tr:after {
+    content: ' ';
+    display: block;
+    visibility: hidden;
+    clear: both;
+}
+th {
+    width: 100%;
+}
+td{
+    width: 50%;
+    float: left;
+}
+.header-fixed {
+    width: 100%;
+}
+tbody {
+    height: 300px;
+    overflow: auto;
+}
+
+::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0,0,0,.5);
+    -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
 }
