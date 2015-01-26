@@ -96,6 +96,9 @@ _.extend(ViewModel.prototype, {
                        that.boardModel.setFEN(data["fen"]);
                        return $.post("/requestmove", {fen: that.boardModel.getFEN()});
                    }
+                   else {
+                       return $.Deferred().reject();
+                   }
                }, function() { console.log("unsuccessful ajax: /makemove")})
 
                .then(function(data) {
