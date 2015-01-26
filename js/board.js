@@ -89,22 +89,26 @@ _.extend(ViewModel.prototype, {
         that.boardModel.toggleLock();
 
         $.post("/makemove",
-               {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()},
-               function(data) {
+               {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()})
+
+               .then(function(data) {
+                   if (data["successful"]) {
+                       that.boardModel.setFEN(data["fen"]);
+                       return $.post("/requestmove",
+                                     {fen: that.boardModel.getFEN()},
+                                     function(data) {
+                                         that.boardModel.setFEN(data["fen"]);
+                                     }).fail(function() {
+                                         console.log("Unsuccessful ajax request: /requestmove");
+                                     });
+                   }
+               }, function() { console.log("unsuccessful ajax: /makemove")})
+
+               .then(function(data) {
                    that.boardModel.setFEN(data["fen"]);
-
-                   $.post("/requestmove",
-                          {fen: that.boardModel.getFEN()},
-                          function(data) {
-                              that.boardModel.setFEN(data["fen"]);
-                          }).fail(function() {
-                              console.log("Unsuccessful ajax request");
-                          }).always(function() {
-                              that.boardModel.toggleLock();
-                          });
-
-               }).fail(function() {
-                   console.log("Unsuccessful ajax request");
+               })
+               .always(function() {
+                   that.boardModel.toggleLock();
                });
     },
 
