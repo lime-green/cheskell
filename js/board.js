@@ -5,20 +5,19 @@ window.addEventListener('load', function() {
     var chess = new ChessModel();
     var view = new ViewModel({model: chess, borderSize: 5, canvas: canvas});
 
-    chess.parseFEN();
-    view.drawBoardSquares();
-    view.drawPieces();
-
     canvas.addEventListener('click', function(evt) {
         view.mouseHandler(evt);
     });
 
     chess.addListener(function (typeString) {
-        if (typeString === 'SQUARE_SELECTED' || typeString === 'SQUARE_DESELECTED') {
+        if (typeString === 'SQUARE_SELECTED' || typeString === 'SQUARE_DESELECTED' || typeString === 'BOARD_UPDATED') {
             view.drawBoardSquares();
             view.drawPieces();
         }
     });
+
+    // setup board
+    chess.parseFEN();
 });
 
 var ViewModel = function(hash) {
@@ -82,11 +81,21 @@ _.extend(ViewModel.prototype, {
     },
 
     makeMove: function(moveFrom, moveTo) {
-        $.post("PATH_TO_RESOURCE",
-               {from: moveFrom, to: moveTo, fen: this.boardModel.getFEN()},
-               function(data) {
+        var that = this;
+        if (that.boardModel.hasLock()) {
+            // MOVE IN PROGRESS - GET OUT!
+            return;
+        }
+        that.boardModel.toggleLock();
 
+        $.post("/makemove",
+               {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()},
+               function(data) {
+                   that.boardModel.setFEN(data["fen"]);
         }).fail(function() {
+            console.log("Unsuccessful ajax request");
+        }).always(function() {
+            that.boardModel.toggleLock();
         });
     },
 
@@ -170,11 +179,20 @@ var ChessModel = function() {
     this.stateString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     this.selected = "";
     this.boardArray = [];
+    this.lock = false;
 };
 
 _.extend(ChessModel.prototype, {
     addListener: function(listener) {
         this.listeners.push(listener);
+    },
+
+    hasLock: function() {
+        return (this.lock === true);
+    },
+
+    toggleLock: function() {
+        this.lock = !this.lock;
     },
 
     squareToIndex: function(squareName) {
@@ -219,6 +237,11 @@ _.extend(ChessModel.prototype, {
         return this.stateString;
     },
 
+    setFEN: function(FEN) {
+        this.stateString = FEN;
+        this.parseFEN();
+    },
+
     parseFEN: function() {
         var FENArray = this.stateString.split(" ");
         var that = this;
@@ -226,11 +249,6 @@ _.extend(ChessModel.prototype, {
         this.boardArray = makeBoard(FENArray[0]);
         var toMove = FENArray[1] === "w" ? "WHITE" : "BLACK";
         var fullMoves = FENArray[5];
-
-        // likely not interested in these variables
-        var castleState = FENArray[2];
-        var enPassantTarget = FENArray[3];
-        var halfMoves = FENArray[4];
 
         function makeBoard(placementString) {
             var result = new Array([], [], [], [], [], [], [], []);
@@ -250,6 +268,10 @@ _.extend(ChessModel.prototype, {
             });
             return result;
         }
+
+        _.each(this.listeners, function(callback, index) {
+            callback('BOARD_UPDATED');
+        });
     },
 
     getBoardArray: function() {
