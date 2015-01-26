@@ -105,10 +105,7 @@ _.extend(ViewModel.prototype, {
 
                }).fail(function() {
                    console.log("Unsuccessful ajax request");
-               }).always(function() {
-                   that.boardModel.toggleLock();
                });
-
     },
 
     drawBoardSquares: function() {
