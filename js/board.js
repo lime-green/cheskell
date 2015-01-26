@@ -92,11 +92,23 @@ _.extend(ViewModel.prototype, {
                {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()},
                function(data) {
                    that.boardModel.setFEN(data["fen"]);
-        }).fail(function() {
-            console.log("Unsuccessful ajax request");
-        }).always(function() {
-            that.boardModel.toggleLock();
-        });
+
+                   $.post("/requestmove",
+                          {fen: that.boardModel.getFEN()},
+                          function(data) {
+                              that.boardModel.setFEN(data["fen"]);
+                          }).fail(function() {
+                              console.log("Unsuccessful ajax request");
+                          }).always(function() {
+                              that.boardModel.toggleLock();
+                          });
+
+               }).fail(function() {
+                   console.log("Unsuccessful ajax request");
+               }).always(function() {
+                   that.boardModel.toggleLock();
+               });
+
     },
 
     drawBoardSquares: function() {
