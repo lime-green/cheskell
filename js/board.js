@@ -94,13 +94,7 @@ _.extend(ViewModel.prototype, {
                .then(function(data) {
                    if (data["successful"]) {
                        that.boardModel.setFEN(data["fen"]);
-                       return $.post("/requestmove",
-                                     {fen: that.boardModel.getFEN()},
-                                     function(data) {
-                                         that.boardModel.setFEN(data["fen"]);
-                                     }).fail(function() {
-                                         console.log("Unsuccessful ajax request: /requestmove");
-                                     });
+                       return $.post("/requestmove", {fen: that.boardModel.getFEN()});
                    }
                }, function() { console.log("unsuccessful ajax: /makemove")})
 
