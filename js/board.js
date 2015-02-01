@@ -287,14 +287,14 @@ _.extend(ChessModel.prototype, {
         console.log(hash);
         this.moveHistory.push(
             {
-                moveFrom: hash.moveFrom,
-                moveTo: hash.moveTo,
+                moveFrom: hash.from,
+                moveTo: hash.to,
                 fen: hash.fen
             }
         );
         this.halfMoves += 1;
         this.notifyListeners('ADD_MOVE_HISTORY',
-                             {moveFrom: hash.moveFrom, moveTo: hash.moveTo, halfMoves: this.halfMoves});
+                             {moveFrom: hash.from, moveTo: hash.to, halfMoves: this.halfMoves});
     },
 
     getMoveHistory: function () {
