@@ -22,7 +22,6 @@ window.addEventListener('load', function () {
             view.drawBoardSquares();
             view.drawPieces();
         } else if (typeString === 'ADD_MOVE_HISTORY') {
-            console.log(hash);
             view.addMoveToTable(hash);
         } else if (typeString === 'CLEAR_MOVE_HISTORY') {
             view.clearTable();
@@ -124,7 +123,7 @@ _.extend(ViewModel.prototype, {
         that.boardModel.toggleLock();
 
         function registerMove(data) {
-            that.boardModel.addMoveToHistory({from: moveFrom, to: moveTo, fen: data.fen});
+            that.boardModel.addMoveToHistory({from: data.from, to: data.to, fen: data.fen});
             that.boardModel.setFEN(data.fen);
         }
 
