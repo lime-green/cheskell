@@ -4,23 +4,32 @@
 'use strict';
 
 window.addEventListener('load', function () {
-    var canvas = document.getElementById("canvas_display");
-    var chess = new ChessModel();
-    var view = new ViewModel({model: chess, borderSize: 5, canvas: canvas});
+    var canvas = document.getElementById("canvas_display"),
+        newGameButton = document.getElementById("new_game_button"),
+        chess = new ChessModel(),
+        view = new ViewModel({model: chess, borderSize: 5, canvas: canvas});
 
     canvas.addEventListener('click', function (evt) {
         view.mouseHandler(evt);
     });
 
-    chess.addListener(function (typeString) {
+    newGameButton.addEventListener('click', function () {
+        chess.newGame();
+    });
+
+    chess.addListener(function (typeString, hash) {
         if (typeString === 'SQUARE_SELECTED' || typeString === 'SQUARE_DESELECTED' || typeString === 'BOARD_UPDATED') {
             view.drawBoardSquares();
             view.drawPieces();
+        } else if (typeString === 'ADD_MOVE_HISTORY') {
+            view.addMoveToTable(hash);
+        } else if (typeString === 'CLEAR_MOVE_HISTORY') {
+            view.clearTable();
         }
     });
-
+ 
     // setup board
-    chess.parseFEN();
+    chess.newGame();
 });
 
 var ViewModel = function (hash) {
@@ -40,6 +49,32 @@ var ViewModel = function (hash) {
 };
 
 _.extend(ViewModel.prototype, {
+
+    clearTable: function (hash) {
+        $("#move_history_table > tbody").html("");
+    },
+
+    addMoveToTable: function (hash) {
+        var table = document.getElementById("move_history_table"),
+            tbody = table.getElementsByTagName("tbody")[0],
+            rowNum = Math.ceil(hash.halfMoves / 2),
+            colNum = 2 - hash.halfMoves % 2,
+            row,
+            cell;
+
+        if (colNum === 1) {
+            row = tbody.insertRow();
+            cell = row.insertCell(0);
+            cell.innerHTML = rowNum + ". ";
+            cell = row.insertCell(1);
+            row.insertCell(2);
+        } else {
+            row = table.rows[table.rows.length - 1];
+            cell = row.cells[2];
+        }
+
+        cell.innerHTML = hash.moveFrom + "-" + hash.moveTo;
+    },
 
     mouseHandler: function (evt) {
         var that = this, mousePosn = (function () {
@@ -87,13 +122,18 @@ _.extend(ViewModel.prototype, {
         }
         that.boardModel.toggleLock();
 
+        function registerMove(data) {
+            that.boardModel.addMoveToHistory({from: data.from, to: data.to, fen: data.fen});
+            that.boardModel.setFEN(data.fen);
+        }
+
         $.post("/makemove",
                {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()})
 
                .then(function (data) {
 
                 if (data.successful) {
-                    that.boardModel.setFEN(data.fen);
+                    registerMove(data);
                     return $.post("/requestmove", {fen: that.boardModel.getFEN()});
                 }
                 return $.Deferred().reject();
@@ -102,7 +142,7 @@ _.extend(ViewModel.prototype, {
                 console.log("unsuccessful ajax: /makemove");
             })
                .then(function (data) {
-                that.boardModel.setFEN(data.fen);
+                registerMove(data);
             })
                .always(function () {
                 that.boardModel.toggleLock();
@@ -115,9 +155,11 @@ _.extend(ViewModel.prototype, {
             blackColour = "#B58863",
             selectColour = "#F7EC74",
             selected = this.boardModel.squareToIndex(this.boardModel.getSelected()),
+            moveHistory = this.boardModel.getMoveHistory(),
             row,
             col,
-            selectFlag;
+            selectFlag,
+            moveFlag;
 
         this.drawRectangle({
             x: this.borderX,
@@ -132,19 +174,33 @@ _.extend(ViewModel.prototype, {
         for (row = 0; row <= 7; row += 1) {
             for (col = 0; col <= 7; col += 1) {
                 selectFlag = false;
+                moveFlag   = false;
+
                 if (selected.row === row && selected.col === col) {
                     selectFlag = true;
                 }
+
+                if (moveHistory !== 'undefined' && moveHistory.length > 0) {
+                    var lastMove = moveHistory.slice(-1)[0],
+                        from = this.boardModel.squareToIndex(lastMove.moveFrom),
+                        to = this.boardModel.squareToIndex(lastMove.moveTo);
+
+                    if ((from.row === row && from.col === col) || (to.row === row && to.col === col)) {
+                        moveFlag = true;
+                    }
+                }
+
                 this.drawRectangle({
                     x: this.sliceSize * col + this.borderX,
                     y: this.sliceSize * row + this.borderY,
                     width: this.sliceSize,
                     height: this.sliceSize,
-                    fillColour: selectFlag ? selectColour :
-                            ((row + col) % 2 === 0)  ? whiteColour  : blackColour
+                    fillColour: ((row + col) % 2 === 0)  ? ((moveFlag || selectFlag) ? selectColour : whiteColour)  :
+                            ((moveFlag || selectFlag) ? "#DAC34A" : blackColour)
                 });
             }
         }
+
     },
 
     drawPieces: function () {
@@ -198,16 +254,51 @@ _.extend(ViewModel.prototype, {
 
 var ChessModel = function () {
     this.listeners = [];
-    this.moveHistory = [];
-    this.stateString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    this.selected = "";
-    this.boardArray = [];
-    this.lock = false;
 };
 
 _.extend(ChessModel.prototype, {
+    newGame: function () {
+        this.stateString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        this.selected = "";
+        this.boardArray = [];
+        this.lock = false;
+        this.halfMoves = 0;
+
+        this.clearMoveHistory();
+        this.parseFEN();
+    },
+
     addListener: function (listener) {
         this.listeners.push(listener);
+    },
+
+    notifyListeners: function (eventString, moreHash) {
+        _.each(this.listeners, function (callback, index) {
+            callback(eventString, moreHash);
+        });
+    },
+
+    clearMoveHistory: function () {
+        this.moveHistory = [];
+        this.notifyListeners('CLEAR_MOVE_HISTORY');
+    },
+
+    addMoveToHistory: function (hash) {
+        console.log(hash);
+        this.moveHistory.push(
+            {
+                moveFrom: hash.from,
+                moveTo: hash.to,
+                fen: hash.fen
+            }
+        );
+        this.halfMoves += 1;
+        this.notifyListeners('ADD_MOVE_HISTORY',
+                             {moveFrom: hash.from, moveTo: hash.to, halfMoves: this.halfMoves});
+    },
+
+    getMoveHistory: function () {
+        return this.moveHistory;
     },
 
     hasLock: function () {
@@ -242,18 +333,12 @@ _.extend(ChessModel.prototype, {
 
     selectSquare: function (squareName) {
         this.selected = squareName;
-
-        _.each(this.listeners, function (callback, index) {
-            callback('SQUARE_SELECTED', squareName);
-        });
+        this.notifyListeners('SQUARE_SELECTED');
     },
 
     deselect: function () {
         this.selected = "";
-
-        _.each(this.listeners, function (callback, index) {
-            callback('SQUARE_DESELECTED');
-        });
+        this.notifyListeners('SQUARE_DESELECTED');
     },
 
     getFEN: function () {
@@ -289,9 +374,7 @@ _.extend(ChessModel.prototype, {
             return result;
         }(FENArray[0]));
 
-        _.each(this.listeners, function (callback, index) {
-            callback('BOARD_UPDATED');
-        });
+        this.notifyListeners('BOARD_UPDATED');
     },
 
     getBoardArray: function () {
