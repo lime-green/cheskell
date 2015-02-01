@@ -10,10 +10,15 @@ tr:after {
 }
 th {
     width: 100%;
+    text-align: center;
 }
 td{
-    width: 50%;
+    width: 40%;
     float: left;
+}
+
+td:first-child {
+    width: 20%;
 }
 .header-fixed {
     width: 100%;
@@ -31,4 +36,50 @@ tbody {
     border-radius: 4px;
     background-color: rgba(0,0,0,.5);
     -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+}
+.btn-sample { 
+  color: #ffffff; 
+  background-color: #45424A; 
+  border-color: #555361; 
+  margin: 10px 5px;
+} 
+ 
+.btn-sample:hover, 
+.btn-sample:focus, 
+.btn-sample:active, 
+.btn-sample.active, 
+.open .dropdown-toggle.btn-sample { 
+  color: #ffffff; 
+  background-color: #2C2A2E; 
+  border-color: #555361; 
+} 
+ 
+.btn-sample:active, 
+.btn-sample.active, 
+.open .dropdown-toggle.btn-sample { 
+  background-image: none; 
+} 
+ 
+.btn-sample.disabled, 
+.btn-sample[disabled], 
+fieldset[disabled] .btn-sample, 
+.btn-sample.disabled:hover, 
+.btn-sample[disabled]:hover, 
+fieldset[disabled] .btn-sample:hover, 
+.btn-sample.disabled:focus, 
+.btn-sample[disabled]:focus, 
+fieldset[disabled] .btn-sample:focus, 
+.btn-sample.disabled:active, 
+.btn-sample[disabled]:active, 
+fieldset[disabled] .btn-sample:active, 
+.btn-sample.disabled.active, 
+.btn-sample[disabled].active, 
+fieldset[disabled] .btn-sample.active { 
+  background-color: #45424A; 
+  border-color: #555361; 
+} 
+ 
+.btn-sample .badge { 
+  color: #45424A; 
+  background-color: #ffffff; 
 }
