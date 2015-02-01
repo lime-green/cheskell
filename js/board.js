@@ -22,6 +22,7 @@ window.addEventListener('load', function () {
             view.drawBoardSquares();
             view.drawPieces();
         } else if (typeString === 'ADD_MOVE_HISTORY') {
+            console.log(hash);
             view.addMoveToTable(hash);
         } else if (typeString === 'CLEAR_MOVE_HISTORY') {
             view.clearTable();
