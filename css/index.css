@@ -1,6 +1,12 @@
 #loading_div {
     height: 100px;
 }
+
+#game_alert {
+    clear: both;
+    margin: auto;
+}
+
 tbody, thead, tr, td, th {
     display: block;
 }
