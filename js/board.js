@@ -39,6 +39,7 @@ window.addEventListener('load', function () {
     // setup board
     game_alert.style.display = "none";
     chess.newGame();
+    chess.setFEN("8/8/8/8/1q6/2k5/8/K7 w - - 0 1");
 });
 
 var ViewModel = function (hash) {
