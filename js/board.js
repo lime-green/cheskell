@@ -7,7 +7,9 @@ window.addEventListener('load', function () {
     var canvas = document.getElementById("canvas_display"),
         newGameButton = document.getElementById("new_game_button"),
         chess = new ChessModel(),
-        view = new ViewModel({model: chess, borderSize: 5, canvas: canvas});
+        view = new ViewModel({model: chess, borderSize: 5, canvas: canvas}),
+        FEN_text = document.getElementById("FEN_text"),
+        FEN_submit = document.getElementById("FEN_submit");
 
     canvas.addEventListener('click', function (evt) {
         view.mouseHandler(evt);
@@ -15,6 +17,10 @@ window.addEventListener('load', function () {
 
     newGameButton.addEventListener('click', function () {
         chess.newGame();
+    });
+
+    FEN_submit.addEventListener('click', function () {
+        chess.setFEN(FEN_text.value);
     });
 
     chess.addListener(function (typeString, hash) {
