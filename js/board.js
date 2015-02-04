@@ -20,6 +20,7 @@ window.addEventListener('load', function () {
     });
 
     FEN_submit.addEventListener('click', function () {
+        chess.newGame();
         chess.setFEN(FEN_text.value);
     });
 
