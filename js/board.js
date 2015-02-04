@@ -128,6 +128,10 @@ _.extend(ViewModel.prototype, {
             return;
         }
         that.boardModel.toggleLock();
+        var spinner = document.createElement("div"),
+            loading_div = document.getElementById("loading_div");
+        spinner.className = "spinner";
+        loading_div.appendChild(spinner);
 
         function registerMove(data) {
             that.boardModel.addMoveToHistory({from: data.from, to: data.to, fen: data.fen});
@@ -152,6 +156,7 @@ _.extend(ViewModel.prototype, {
                 registerMove(data);
             })
                .always(function () {
+                loading_div.innerHTML = "";
                 that.boardModel.toggleLock();
             });
     },
