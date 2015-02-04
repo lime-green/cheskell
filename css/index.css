@@ -93,7 +93,7 @@ fieldset[disabled] .btn-sample.active {
 .spinner {
 height:30px;
 width:30px;
-margin:0px auto;
+margin:20px 0;
 position:relative;
 -webkit-animation: rotation .6s infinite linear;
 -moz-animation: rotation .6s infinite linear;

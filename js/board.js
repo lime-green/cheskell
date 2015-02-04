@@ -121,17 +121,34 @@ _.extend(ViewModel.prototype, {
         }());
     },
 
+    addSpinner: function () {
+        var spinner = document.createElement("div"),
+            loading_div = document.getElementById("loading_div");
+
+        spinner.className = "spinner";
+
+        return {
+            create: function () {
+                loading_div.appendChild(document.createTextNode("Thinking..."));
+                loading_div.appendChild(spinner);
+            },
+            destroy: function () {
+                while (loading_div.firstChild) {
+                    loading_div.removeChild(loading_div.firstChild);
+                }
+            }
+        };
+    },
+
     makeMove: function (moveFrom, moveTo) {
         var that = this;
         if (that.boardModel.hasLock()) {
             // MOVE IN PROGRESS - GET OUT!
             return;
         }
+        var spinner = this.addSpinner();
+        spinner.create();
         that.boardModel.toggleLock();
-        var spinner = document.createElement("div"),
-            loading_div = document.getElementById("loading_div");
-        spinner.className = "spinner";
-        loading_div.appendChild(spinner);
 
         function registerMove(data) {
             that.boardModel.addMoveToHistory({from: data.from, to: data.to, fen: data.fen});
@@ -156,7 +173,7 @@ _.extend(ViewModel.prototype, {
                 registerMove(data);
             })
                .always(function () {
-                loading_div.innerHTML = "";
+                spinner.destroy();
                 that.boardModel.toggleLock();
             });
     },
