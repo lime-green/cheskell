@@ -127,8 +127,6 @@ _.extend(ViewModel.prototype, {
         // Use as addGameOver().create()
         // then   addGameOver().destroy()
 
-        debugger;
-
         var gameOver = document.getElementsByClassName("alert alert-danger")[0] || document.createElement("div"),
             loading_div = document.getElementById("loading_div");
 
@@ -157,7 +155,9 @@ _.extend(ViewModel.prototype, {
                 loading_div.appendChild(spinner);
             },
             destroy: function () {
-                loading_div.removeChild(spinner);
+                if (document.getElementsByClassName("spinner")[0]) {
+                    loading_div.removeChild(spinner);
+                }
             }
         };
     },
@@ -199,7 +199,7 @@ _.extend(ViewModel.prototype, {
                         return $.Deferred().resolve("Draw!");
                     default:
                         registerMove(data);
-                        this.addSpinner().create();
+                        that.addSpinner().create();
                         return $.post("/requestmove", {fen: that.boardModel.getFEN()});
                     }
                 }
@@ -219,9 +219,9 @@ _.extend(ViewModel.prototype, {
                         resultText = resultText || "Black wins!";
                     case "1/2-1/2":
                         resultText = resultText || "Draw!";
-                        alert(data);
                         registerMove(data);
                         that.addGameOver().create(resultText);
+                        setTimeout(that.addGameOver().destroy(), 3000);
                         return;
                     }
                     registerMove(data);
@@ -229,13 +229,13 @@ _.extend(ViewModel.prototype, {
                 } else {
                     // white causes game to end
                     // move has already been registered
-                    alert(data);
                     that.addGameOver().create(data);
+                    setTimeout(that.addGameOver().destroy(), 3000);
                 }
             }, function () {
                 that.boardModel.toggleLock();
             }).always(function () {
-                this.addSpinner().destroy();
+                that.addSpinner().destroy();
             });
     },
 
