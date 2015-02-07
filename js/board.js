@@ -123,6 +123,28 @@ _.extend(ViewModel.prototype, {
         }());
     },
 
+    addGameOver: function () {
+        // Use as addGameOver().create()
+        // then   addGameOver().destroy()
+
+        var gameOver = document.getElementsByClassName("alert alert-danger")[0] || document.createElement("div"),
+            loading_div = document.getElementById("loading_div");
+
+        gameOver.className = "alert alert-danger";
+
+        return {
+            create: function (text) {
+                gameOver.innerHTML = text;
+                loading_div.appendChild(gameOver);
+            },
+            destroy: function () {
+                while (loading_div.firstChild) {
+                    loading_div.removeChild(loading_div.firstChild);
+                }
+            }
+        };
+    },
+
     addSpinner: function () {
         var spinner = document.createElement("div"),
             loading_div = document.getElementById("loading_div");
@@ -191,20 +213,29 @@ _.extend(ViewModel.prototype, {
             })
                .then(function (data) {
                 if (typeof data !== 'string') {
+                    var resultText;
+
                     switch (data.result) {
                     case "1-0":
+                        resultText = resultText || "White wins!";
                     case "0-1":
+                        resultText = resultText || "Black wins!";
                     case "1/2-1/2":
+                        resultText = resultText || "Draw!";
                         registerMove(data);
-                        alert(data.result);
+                        this.addGameOver().create(resultText);
+                        setTimeout(this.addGameOver().destroy(), 3000);
                         return;
                     }
                     registerMove(data);
                     that.boardModel.toggleLock();
                 } else {
-                    alert(data);
+                    // white causes game to end
+                    // move has already been registered
+                    this.addGameOver().create(data);
+                    setTimeout(this.addGameOver().destroy(), 3000);
                 }
-            }, function() {
+            }, function () {
                 that.boardModel.toggleLock();
             }).always(function () {
                 spinner.destroy();
