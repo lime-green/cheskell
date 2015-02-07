@@ -223,8 +223,7 @@ _.extend(ViewModel.prototype, {
                     case "1/2-1/2":
                         resultText = resultText || "Draw!";
                         registerMove(data);
-                        this.addGameOver().create(resultText);
-                        setTimeout(this.addGameOver().destroy(), 3000);
+                        that.addGameOver().create(resultText);
                         return;
                     }
                     registerMove(data);
@@ -232,8 +231,7 @@ _.extend(ViewModel.prototype, {
                 } else {
                     // white causes game to end
                     // move has already been registered
-                    this.addGameOver().create(data);
-                    setTimeout(this.addGameOver().destroy(), 3000);
+                    that.addGameOver().create(data);
                 }
             }, function () {
                 that.boardModel.toggleLock();
