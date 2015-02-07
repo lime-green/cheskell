@@ -140,15 +140,13 @@ _.extend(ViewModel.prototype, {
                 loading_div.appendChild(gameOver);
             },
             destroy: function () {
-                while (loading_div.firstChild) {
-                    loading_div.removeChild(loading_div.firstChild);
-                }
+                loading_div.removeChild(gameOver);
             }
         };
     },
 
     addSpinner: function () {
-        var spinner = document.createElement("div"),
+        var spinner = document.getElementsByClassName("spinner")[0] || document.createElement("div"),
             loading_div = document.getElementById("loading_div");
 
         spinner.className = "spinner";
@@ -159,9 +157,7 @@ _.extend(ViewModel.prototype, {
                 loading_div.appendChild(spinner);
             },
             destroy: function () {
-                while (loading_div.firstChild) {
-                    loading_div.removeChild(loading_div.firstChild);
-                }
+                loading_div.removeChild(spinner);
             }
         };
     },
@@ -172,8 +168,6 @@ _.extend(ViewModel.prototype, {
             // MOVE IN PROGRESS - GET OUT!
             return;
         }
-        var spinner = this.addSpinner();
-        spinner.create();
         that.boardModel.toggleLock();
 
         function registerMove(data) {
@@ -205,6 +199,7 @@ _.extend(ViewModel.prototype, {
                         return $.Deferred().resolve("Draw!");
                     default:
                         registerMove(data);
+                        this.addSpinner().create();
                         return $.post("/requestmove", {fen: that.boardModel.getFEN()});
                     }
                 }
@@ -240,7 +235,7 @@ _.extend(ViewModel.prototype, {
             }, function () {
                 that.boardModel.toggleLock();
             }).always(function () {
-                spinner.destroy();
+                this.addSpinner().destroy();
             });
     },
 
