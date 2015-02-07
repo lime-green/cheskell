@@ -17,6 +17,7 @@ window.addEventListener('load', function () {
     });
 
     newGameButton.addEventListener('click', function () {
+        view.killAjax();
         chess.newGame();
     });
 
@@ -44,6 +45,7 @@ window.addEventListener('load', function () {
 });
 
 var ViewModel = function (hash) {
+    this.ajax = [];
     this.boardModel = hash.model;
     this.canvas = hash.canvas;
     this.ctx = this.canvas.getContext('2d');
@@ -173,6 +175,16 @@ _.extend(ViewModel.prototype, {
         };
     },
 
+    killAjax: function () {
+        try {
+            this.ajax.pop().abort();
+        } catch (err) {
+            console.log(err);
+        }
+
+        this.ajax = [];
+    },
+
     makeMove: function (moveFrom, moveTo) {
         var that = this;
         if (that.boardModel.hasLock()) {
@@ -186,14 +198,12 @@ _.extend(ViewModel.prototype, {
             that.boardModel.setFEN(data.fen);
         }
 
-        function gameOver(alertMessage) {
-            var newGameButton = document.getElementById("new_game_button");
-            newGameButton.style.display = "block";
-            newGameButton.innerHTML = alertMessage;
-        }
-
-        $.post("/makemove",
-               {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()})
+        this.ajax = [];
+        this.ajax.push($.ajax({
+            type: 'POST',
+            url: "/makemove",
+            data: {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()}
+        })
 
                .then(function (data) {
 
@@ -211,7 +221,12 @@ _.extend(ViewModel.prototype, {
                     default:
                         registerMove(data);
                         that.addSpinner().create();
-                        return $.post("/requestmove", {fen: that.boardModel.getFEN()});
+                        that.ajax.push($.ajax({
+                            type: 'POST',
+                            url: "/requestmove",
+                            data: {fen: that.boardModel.getFEN()}
+                        }));
+                        return that.ajax[that.ajax.length - 1];
                     }
                 }
                 return $.Deferred().reject();
@@ -245,7 +260,7 @@ _.extend(ViewModel.prototype, {
                 that.boardModel.toggleLock();
             }).always(function () {
                 that.addSpinner().destroy();
-            });
+            }));
     },
 
     drawBoardSquares: function () {
