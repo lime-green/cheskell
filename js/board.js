@@ -222,6 +222,7 @@ _.extend(ViewModel.prototype, {
                         resultText = resultText || "Black wins!";
                     case "1/2-1/2":
                         resultText = resultText || "Draw!";
+                        alert(data);
                         registerMove(data);
                         that.addGameOver().create(resultText);
                         return;
@@ -231,6 +232,7 @@ _.extend(ViewModel.prototype, {
                 } else {
                     // white causes game to end
                     // move has already been registered
+                    alert(data);
                     that.addGameOver().create(data);
                 }
             }, function () {
