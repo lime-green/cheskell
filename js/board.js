@@ -22,6 +22,7 @@ window.addEventListener('load', function () {
     });
 
     FEN_submit.addEventListener('click', function () {
+        view.killAjax();
         chess.newGame();
         chess.setFEN(FEN_text.value);
     });
@@ -40,7 +41,6 @@ window.addEventListener('load', function () {
     });
 
     // setup board
-    game_alert.style.display = "none";
     chess.newGame();
 });
 
@@ -177,7 +177,9 @@ _.extend(ViewModel.prototype, {
 
     killAjax: function () {
         try {
-            this.ajax.pop().abort();
+            if (this.ajax.length > 0) {
+                this.ajax.pop().abort();
+            }
         } catch (err) {
             console.log(err);
         }
