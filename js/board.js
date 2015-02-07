@@ -33,6 +33,8 @@ window.addEventListener('load', function () {
             view.addMoveToTable(hash);
         } else if (typeString === 'CLEAR_MOVE_HISTORY') {
             view.clearTable();
+        } else if (typeString === 'NEW_GAME') {
+            view.clearAlerts();
         }
     });
 
@@ -123,6 +125,11 @@ _.extend(ViewModel.prototype, {
         }());
     },
 
+    clearAlerts: function () {
+        var loading_div = document.getElementById("loading_div");
+        loading_div.innerHTML = "";
+    },
+
     addGameOver: function () {
         // Use as addGameOver().create()
         // then   addGameOver().destroy()
@@ -138,27 +145,29 @@ _.extend(ViewModel.prototype, {
                 loading_div.appendChild(gameOver);
             },
             destroy: function () {
-                while (loading_div.firstChild) {
-                    loading_div.removeChild(loading_div.firstChild);
-                }
+                loading_div.removeChild(gameOver);
             }
         };
     },
 
     addSpinner: function () {
-        var spinner = document.createElement("div"),
+        var spinner_div = document.getElementById("spinner_div") || document.createElement("div"),
             loading_div = document.getElementById("loading_div");
 
-        spinner.className = "spinner";
+        spinner_div.id = "spinner_div";
 
         return {
             create: function () {
-                loading_div.appendChild(document.createTextNode("Thinking..."));
-                loading_div.appendChild(spinner);
+                var spinner = document.createElement("div");
+                spinner.className = "spinner";
+
+                spinner_div.appendChild(document.createTextNode("Thinking..."));
+                spinner_div.appendChild(spinner);
+                loading_div.appendChild(spinner_div);
             },
             destroy: function () {
-                while (loading_div.firstChild) {
-                    loading_div.removeChild(loading_div.firstChild);
+                if (document.getElementById("spinner_div")) {
+                    loading_div.removeChild(spinner_div);
                 }
             }
         };
@@ -170,8 +179,6 @@ _.extend(ViewModel.prototype, {
             // MOVE IN PROGRESS - GET OUT!
             return;
         }
-        var spinner = this.addSpinner();
-        spinner.create();
         that.boardModel.toggleLock();
 
         function registerMove(data) {
@@ -203,6 +210,7 @@ _.extend(ViewModel.prototype, {
                         return $.Deferred().resolve("Draw!");
                     default:
                         registerMove(data);
+                        that.addSpinner().create();
                         return $.post("/requestmove", {fen: that.boardModel.getFEN()});
                     }
                 }
@@ -223,8 +231,7 @@ _.extend(ViewModel.prototype, {
                     case "1/2-1/2":
                         resultText = resultText || "Draw!";
                         registerMove(data);
-                        this.addGameOver().create(resultText);
-                        setTimeout(this.addGameOver().destroy(), 3000);
+                        that.addGameOver().create(resultText);
                         return;
                     }
                     registerMove(data);
@@ -232,13 +239,12 @@ _.extend(ViewModel.prototype, {
                 } else {
                     // white causes game to end
                     // move has already been registered
-                    this.addGameOver().create(data);
-                    setTimeout(this.addGameOver().destroy(), 3000);
+                    that.addGameOver().create(data);
                 }
             }, function () {
                 that.boardModel.toggleLock();
             }).always(function () {
-                spinner.destroy();
+                that.addSpinner().destroy();
             });
     },
 
@@ -359,6 +365,8 @@ _.extend(ChessModel.prototype, {
 
         this.clearMoveHistory();
         this.parseFEN();
+
+        this.notifyListeners('NEW_GAME');
     },
 
     addListener: function (listener) {
