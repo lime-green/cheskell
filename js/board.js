@@ -127,6 +127,8 @@ _.extend(ViewModel.prototype, {
         // Use as addGameOver().create()
         // then   addGameOver().destroy()
 
+        debugger;
+
         var gameOver = document.getElementsByClassName("alert alert-danger")[0] || document.createElement("div"),
             loading_div = document.getElementById("loading_div");
 
