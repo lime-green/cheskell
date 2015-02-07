@@ -5,6 +5,7 @@
 
 window.addEventListener('load', function () {
     var canvas = document.getElementById("canvas_display"),
+        game_alert = document.getElementById("game_alert"),
         newGameButton = document.getElementById("new_game_button"),
         chess = new ChessModel(),
         view = new ViewModel({model: chess, borderSize: 5, canvas: canvas}),
@@ -34,9 +35,11 @@ window.addEventListener('load', function () {
             view.clearTable();
         }
     });
- 
+
     // setup board
+    game_alert.style.display = "none";
     chess.newGame();
+    chess.setFEN("8/8/8/8/1q6/2k5/8/K7 w - - 0 1");
 });
 
 var ViewModel = function (hash) {
@@ -62,18 +65,18 @@ _.extend(ViewModel.prototype, {
     },
 
     addMoveToTable: function (hash) {
-        var table = document.getElementById("move_history_table"),
-            tbody = table.getElementsByTagName("tbody")[0],
+        var table  = document.getElementById("move_history_table"),
+            tbody  = table.getElementsByTagName("tbody")[0],
             rowNum = Math.ceil(hash.halfMoves / 2),
             colNum = 2 - hash.halfMoves % 2,
             row,
             cell;
 
         if (colNum === 1) {
-            row = tbody.insertRow();
-            cell = row.insertCell(0);
+            row            = tbody.insertRow();
+            cell           = row.insertCell(0);
             cell.innerHTML = rowNum + ". ";
-            cell = row.insertCell(1);
+            cell           = row.insertCell(1);
             row.insertCell(2);
         } else {
             row = table.rows[table.rows.length - 1];
@@ -155,14 +158,32 @@ _.extend(ViewModel.prototype, {
             that.boardModel.setFEN(data.fen);
         }
 
+        function gameOver(alertMessage) {
+            var newGameButton = document.getElementById("new_game_button");
+            newGameButton.style.display = "block";
+            newGameButton.innerHTML = alertMessage;
+        }
+
         $.post("/makemove",
                {from: moveFrom, to: moveTo, fen: that.boardModel.getFEN()})
 
                .then(function (data) {
 
                 if (data.successful) {
-                    registerMove(data);
-                    return $.post("/requestmove", {fen: that.boardModel.getFEN()});
+                    switch (data.result) {
+                    case "1-0":
+                        registerMove(data);
+                        return $.Deferred().resolve("White wins!");
+                    case "0-1":
+                        registerMove(data);
+                        return $.Deferred().resolve("Black wins!");
+                    case "1/2-1/2":
+                        registerMove(data);
+                        return $.Deferred().resolve("Draw!");
+                    default:
+                        registerMove(data);
+                        return $.post("/requestmove", {fen: that.boardModel.getFEN()});
+                    }
                 }
                 return $.Deferred().reject();
 
@@ -170,11 +191,24 @@ _.extend(ViewModel.prototype, {
                 console.log("unsuccessful ajax: /makemove");
             })
                .then(function (data) {
-                registerMove(data);
-            })
-               .always(function () {
-                spinner.destroy();
+                if (typeof data !== 'string') {
+                    switch (data.result) {
+                    case "1-0":
+                    case "0-1":
+                    case "1/2-1/2":
+                        registerMove(data);
+                        alert(data.result);
+                        return;
+                    }
+                    registerMove(data);
+                    that.boardModel.toggleLock();
+                } else {
+                    alert(data);
+                }
+            }, function() {
                 that.boardModel.toggleLock();
+            }).always(function () {
+                spinner.destroy();
             });
     },
 
@@ -313,7 +347,6 @@ _.extend(ChessModel.prototype, {
     },
 
     addMoveToHistory: function (hash) {
-        console.log(hash);
         this.moveHistory.push(
             {
                 moveFrom: hash.from,
